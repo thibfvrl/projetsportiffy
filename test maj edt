@@ -1,0 +1,61 @@
+<?php
+if (!isset($_GET['id'])) {
+    echo "ID coach manquant.";
+    exit;
+}
+
+$coachId = intval($_GET['id']);
+
+// Connexion à la BDD
+$pdoCoach = new PDO("mysql:host=localhost;dbname=coach;charset=utf8", "root", "");
+$pdoRdv = new PDO("mysql:host=localhost;dbname=prisederendezvous;charset=utf8", "root", "");
+
+// Obtenir le nom du coach
+$stmt = $pdoCoach->prepare("SELECT nom FROM info_coach WHERE id_coach = ?");
+$stmt->execute([$coachId]);
+$coach = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$coach) {
+    echo "Coach non trouvé.";
+    exit;
+}
+
+$nomCoach = $coach['nom'];
+$jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+$heures = ["09h", "10h", "11h", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h"];
+
+// Créneaux réservés
+$creneaux = [];
+$req = $pdoRdv->prepare("SELECT jour, heure FROM rendezvous WHERE coach = ?");
+$req->execute([$nomCoach]);
+while ($ligne = $req->fetch(PDO::FETCH_ASSOC)) {
+    $creneaux[$ligne['jour'] . '_' . $ligne['heure']] = true;
+}
+?>
+<div style="margin: 20px;">
+  <a href="liste_coachs.php" class="btn-retour">⬅ Retour à la liste des coachs</a>
+</div>
+
+
+<h3>Emploi du temps de <?= htmlspecialchars($nomCoach) ?></h3>
+<table border="1" style="width: 100%; border-collapse: collapse; text-align: center;">
+    <tr>
+        <th>Jour</th>
+        <?php foreach ($heures as $heure): ?>
+            <th><?= $heure ?></th>
+        <?php endforeach; ?>
+    </tr>
+    <?php foreach ($jours as $jour): ?>
+        <tr>
+            <td><?= $jour ?></td>
+            <?php foreach ($heures as $heure): 
+                $key = $jour . '_' . $heure;
+                $reserved = isset($creneaux[$key]);
+            ?>
+                <td style="background-color: <?= $reserved ? '#a0aec0' : '#68d391' ?>;">
+                    <?= $reserved ? 'X' : '' ?>
+                </td>
+            <?php endforeach; ?>
+        </tr>
+    <?php endforeach; ?>
+</table>
