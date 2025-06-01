@@ -1,0 +1,201 @@
+<?php
+session_start();
+
+// Gestion de la déconnexion
+if (isset($_GET['logout'])) {
+    $logout_message = "<div class='msgln'><span class='left-info'>User <b class='user-name-left'>" .
+        $_SESSION['name'] . "</b> a quitté la session de chat.</span><br></div>";
+    file_put_contents("log.html", $logout_message, FILE_APPEND | LOCK_EX);
+    session_destroy();
+    header("Location: chat.php");
+    exit;
+}
+
+// Traitement du formulaire de connexion
+if (isset($_POST['enter'])) {
+    if (!empty($_POST['name'])) {
+        $_SESSION['name'] = stripslashes(htmlspecialchars($_POST['name']));
+    } else {
+        echo '<span class="error">Veuillez saisir votre nom</span>';
+    }
+}
+
+// Affiche le formulaire de login
+function loginForm()
+{
+    echo '
+    <div id="loginform">
+        <p>Veuillez saisir votre nom pour continuer !</p>
+        <form action="chat.php" method="post">
+            <label for="name">Nom : </label>
+            <input type="text" name="name" id="name" />
+            <input type="submit" name="enter" id="enter" value="Soumettre" />
+        </form>
+    </div>';
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Chat Texto</title>
+    <link rel="stylesheet" href="style.css" />
+    <style >* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 20px auto;
+  font-family: "Lato", sans-serif;
+  font-weight: 300;
+}
+
+#wrapper, #loginform {
+  margin: 0 auto;
+  padding-bottom: 25px;
+  background: #eee;
+  width: 600px;
+  border: 2px solid #212121;
+  border-radius: 4px;
+}
+
+#loginform {
+  padding-top: 18px;
+  text-align: center;
+}
+
+#chatbox {
+  text-align: left;
+  margin: 20px auto;
+  padding: 10px;
+  background: #fff;
+  height: 300px;
+  width: 530px;
+  border: 1px solid #a7a7a7;
+  overflow: auto;
+  border-radius: 4px;
+  border-bottom: 4px solid #a7a7a7;
+}
+
+form {
+  padding: 15px 25px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+#usermsg {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid #ff9800;
+}
+
+#submitmsg {
+  background: #ff9800;
+  border: 2px solid #e65100;
+  color: white;
+  padding: 4px 10px;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+#menu {
+  padding: 15px 25px;
+  display: flex;
+}
+
+#menu p.welcome {
+  flex: 1;
+}
+
+a#exit {
+  color: white;
+  background: #c62828;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.msgln {
+  margin: 0 0 5px 0;
+}
+
+.msgln span.chat-time {
+  color: #666;
+  font-size: 60%;
+  vertical-align: super;
+}
+
+.msgln b.user-name {
+  font-weight: bold;
+  background: #546e7a;
+  color: white;
+  padding: 2px 4px;
+  font-size: 90%;
+  border-radius: 4px;
+  margin: 0 5px 0 0;
+}
+</style>
+</head>
+<body>
+<?php
+if (!isset($_SESSION['name'])) {
+    loginForm();
+} else {
+?>
+<div id="wrapper">
+    <div id="menu">
+        <p class="welcome">Bienvenue, <b><?php echo $_SESSION['name']; ?></b></p>
+        <p class="logout"><a id="exit" href="#">Quitter la conversation</a></p>
+    </div>
+    <div id="chatbox">
+        <?php
+        if (file_exists("log.html") && filesize("log.html") > 0) {
+            echo file_get_contents("log.html");
+        }
+        ?>
+    </div>
+    <form name="message" action="">
+        <input name="usermsg" type="text" id="usermsg" />
+        <input name="submitmsg" type="submit" id="submitmsg" value="Envoyer" />
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+    $("#submitmsg").click(function () {
+        const clientmsg = $("#usermsg").val();
+        $.post("post.php", { text: clientmsg });
+        $("#usermsg").val("");
+        return false;
+    });
+
+    function loadLog() {
+        const oldscrollHeight = $("#chatbox")[0].scrollHeight - 20;
+        $.ajax({
+            url: "log.html",
+            cache: false,
+            success: function (html) {
+                $("#chatbox").html(html);
+                const newscrollHeight = $("#chatbox")[0].scrollHeight - 20;
+                if (newscrollHeight > oldscrollHeight) {
+                    $("#chatbox").animate({ scrollTop: newscrollHeight }, 'normal');
+                }
+            }
+        });
+    }
+
+    setInterval(loadLog, 2500);
+
+    $("#exit").click(function () {
+        if (confirm("Voulez-vous vraiment quitter ?")) {
+            window.location = "chat.php?logout=true";
+        }
+    });
+});
+</script>
+<?php } ?>
+</body>
+</html>
