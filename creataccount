@@ -1,0 +1,308 @@
+<?php
+$database = "Coach";
+$db_handle = mysqli_connect('localhost', 'root', '');
+$db_found = mysqli_select_db($db_handle, $database);
+
+if (!$db_found) {
+    die("Base de données non trouvée.");
+}
+
+
+$nom = isset($_POST["nom"]) ? trim($_POST["nom"]) : "";
+$specialite = isset($_POST["specialite"]) ? trim($_POST["specialite"]) : "";
+$photo = isset($_POST["photo"]) ? trim($_POST["photo"]) : "";
+$video = isset($_POST["video"]) ? trim($_POST["video"]) : "";
+$cv = isset($_POST["cv"]) ? trim($_POST["cv"]) : "";
+$dispo = isset($_POST["dispo"]) ? trim($_POST["dispo"]) : "";
+$mdp = isset($_POST["mdp"]) ? trim($_POST["mdp"]) : "";
+$adresse_mail = isset($_POST["adresse_mail"]) ? trim($_POST["adresse_mail"]) : "";
+$salle = isset($_POST["salle"]) ? trim($_POST["salle"]) : "";
+$competition = isset($_POST["competition"]) ? trim($_POST["competition"]) : "";
+
+if (isset($_POST["ajouter"])) {
+    // Vérifie si email existe déjà
+    $check_sql = "SELECT * FROM info_coach WHERE adresse_mail = '$adresse_mail'";
+    $check_result = mysqli_query($db_handle, $check_sql);
+
+    if (mysqli_num_rows($check_result) == 0) {
+        // Hasher le mot de passe ici
+        $mdp_hache = password_hash($mdp, PASSWORD_DEFAULT);
+
+        // Mettre à jour la requête pour utiliser le mot de passe hashé
+        $insert_sql = "INSERT INTO info_coach (nom, specialite, photo, video, cv, dispo, mdp, adresse_mail, salle, competition)
+                       VALUES ('$nom', '$specialite', '$photo', '$video', '$cv', '$dispo', '$mdp_hache', '$adresse_mail', '$salle','$competition')";
+        $result = mysqli_query($db_handle, $insert_sql);
+
+        if ($result) {
+            header("Location: liste_coachs.php");
+            exit();
+        } else {
+            echo "Erreur lors de l'insertion du coach.";
+        }
+    } else {
+        echo "<script>
+                alert('Un coach avec cet Email existe déjà.');
+                window.location.href = 'ajouter_coach.php';
+              </script>";
+    }
+}
+mysqli_close($db_handle);
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter un coach - Sportify</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #111;
+    }
+
+    header {
+      background-color: black;
+      padding: 20px 0;
+    }
+
+    .navbar {
+      height: 60px;
+      background-color: black;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo img {
+      height: 40px;
+    }
+
+    .logo span {
+      color: white;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .nav-links {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #68d391;
+    }
+
+    .nav-links .dropdown {
+      position: relative;
+    }
+
+    .nav-links .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 30px;
+      background-color: black;
+      padding: 10px 0;
+      border-radius: 5px;
+      z-index: 10;
+      min-width: 150px;
+    }
+
+    .nav-links .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .nav-links .dropdown-content a {
+      display: block;
+      padding: 10px 20px;
+      color: white;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .nav-links .dropdown-content a:hover {
+      background-color: #68d391;
+      color: black;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 80px auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+      border-radius: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    input, textarea {
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #68d391;
+      color: white;
+      padding: 12px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #4caf50;
+    }
+
+    footer {
+      background-color: black;
+      color: white;
+      text-align: center;
+      padding: 15px 0;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="coach/slogo.png" alt="Logo">
+      <span>SPORTIFY</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="accueil.php">Accueil</a></li>
+      <li class="dropdown">
+        <a href="#">Tout Parcourir</a>
+        <ul class="dropdown-content">
+          <li><a href="activite.php">Activités Sportives</a></li>
+          <li><a href="compet.php">Sports de compétition</a></li>
+          <li><a href="salle.php">Salle de sport Omnes</a></li>
+        </ul>
+      </li>
+      <li><a href="recherche.php">Recherche</a></li>
+      <li><a href="rdv.php">Rendez-vous</a></li>
+      <li><a href="compte.php">Votre Compte</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <h1>Ajouter un coach</h1>
+  <form action="ajouter_coach.php" method="post" onsubmit="return validerSpecialite()">
+  <input type="text" name="nom" placeholder="Nom complet" required>
+<label>Photo du coach :</label>
+  <input type="file" name="photo" accept="coach/*" required>
+    <input type="text" name="video" placeholder="Lien vidéo (optionnel)">
+  <input type="text" name="adresse_mail" placeholder="adresse mail">
+  <input type="text" name="mdp" placeholder="mdp">
+  <textarea name="cv" placeholder="CV (texte libre)" rows="4" required></textarea>
+  <textarea name="dispo" placeholder="Disponibilité de la semaine" rows="2" required></textarea>
+
+  <label><input type="checkbox" id="checkComp" name="competition" value="1" onchange="afficherSpecialites()"> Sport de compétition</label>
+
+  <div id="listeNormale">
+    <select name="specialiteNormale">
+      <option value="">-- Choisir une spécialité --</option>
+      <option value="musculation">Musculation</option>
+      <option value="fitness">Fitness</option>
+      <option value="biking">Biking</option>
+      <option value="cardio">Cardio</option>
+      <option value="cours-collectif">cours-collectif</option>
+    </select>
+  </div>
+
+  <div id="listeCompet" style="display: none;">
+    <select name="specialiteCompet">
+      <option value="">-- Choisir un sport de compétition --</option>
+      <option value="rugby">Rugby</option>
+      <option value="tennis">Tennis</option>
+      <option value="foot">Foot</option>
+      <option value="natation">Natation</option>
+      <option value="plongeon">Plongeon</option>
+      <option value="basket">Basket</option>
+    </select>
+  </div>
+
+ <select name="salle" required>
+  <option value="">-- Choisir salle de pratique --</option>
+  <option value="exterieur">Extérieur</option>
+  <option value="interieur">Intérieur</option>
+  <option value="salle de sport">Salle de sport</option>
+  <option value="stade">Stade</option>
+  <option value="piscine">Piscine</option>
+</select>
+
+
+  <input type="hidden" name="specialite" id="specialiteFinale">
+  <button type="submit" name="ajouter">Ajouter</button>
+</form>
+
+<script>
+  function afficherSpecialites() {
+    const isComp = document.getElementById("checkComp").checked;
+    document.getElementById("listeNormale").style.display = isComp ? "none" : "block";
+    document.getElementById("listeCompet").style.display = isComp ? "block" : "none";
+  }
+
+  function validerSpecialite() {
+    const isComp = document.getElementById("checkComp").checked;
+    const normal = document.querySelector('[name="specialiteNormale"]').value;
+    const compet = document.querySelector('[name="specialiteCompet"]').value;
+    const cible = document.getElementById("specialiteFinale");
+
+    if (isComp && compet === "") {
+      alert("Choisissez un sport de compétition");
+      return false;
+    }
+
+    if (!isComp && normal === "") {
+      alert("Choisissez une spécialité");
+      return false;
+    }
+
+    cible.value = isComp ? compet : normal;
+    return true;
+  }
+</script>
+
+</main>
+
+<footer>
+  <p>&copy; 2025 Sportify</p>
+</footer>
+
+</body>
+</html>
